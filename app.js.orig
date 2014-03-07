@@ -211,6 +211,12 @@ app.get('/', function (req, res) {
     } else {
         gotToken();
     }
+<<<<<<< HEAD
+    res.write('Glass Mirror API with Node');
+=======
+    //res.write('Glass Mirror API with Node');
+    //app.get('/users', user.list);
+>>>>>>> jade_stable
     //res.sendfile('./index.html');
     res.end();
 
@@ -219,8 +225,12 @@ app.get('/oauth2callback', function (req, res) {
     // if we're able to grab the token, redirect the user back to the main page
     grabToken(req.query.code, failure, function () {
         res.redirect('/');
+<<<<<<< HEAD
+=======
         //app.get('/', routes.index);
+>>>>>>> jade_stable
         //res.sendfile('./index.html');
+        //res.redirect('index.html');
     });
 });
 app.post('/reply', function(req, res){
