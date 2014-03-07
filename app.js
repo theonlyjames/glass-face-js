@@ -1,33 +1,3 @@
-
-/**
- * Module dependencies.
- */
-
-
-
-// all environments
-//app.set('port', process.env.PORT || 3000);
-//app.set('views', path.join(__dirname, 'views'));
-//app.set('view engine', 'jade');
-//app.use(express.favicon());
-//app.use(express.logger('dev'));
-//app.use(express.json());
-//app.use(express.urlencoded());
-//app.use(express.methodOverride());
-//app.use(app.router);
-//app.use(require('stylus').middleware(path.join(__dirname, 'public')));
-//app.use(express.static(path.join(__dirname, 'public')));
-
-// development only
-//if ('development' == app.get('env')) {
-//  app.use(express.errorHandler());
-//}
-//
-//app.get('/', routes.index);
-//app.get('/users', user.list);
-
-
-
 /**
  * Module dependencies.
  */
@@ -90,7 +60,18 @@ var gotToken = function () {
             //insertHello(client, failure, success);
             //insertContact(client, failure, success);
             //insertLocation(client, failure, success);
-            //removeCard(client, failure, success);
+        });
+};
+var sendCommand = function () {
+    googleapis
+        .discover('mirror', 'v1')
+        .execute(function (err, client) {
+            if (!!err) {
+                failure();
+                return;
+            }
+            console.log('mirror client send command', client);
+            insertHello(client, failure, success);
         });
 };
 
@@ -99,12 +80,15 @@ var insertHello = function (client, errorCallback, successCallback) {
     client
         .mirror.timeline.insert(
         {
-            "text": "Hello world",
+            "text": "HELLO JAMES",
             "callbackUrl": "https://mirrornotifications.appspot.com/forward?url=http://localhost:8081/reply",
             "menuItems": [
                 {"action": "REPLY"},
                 {"action": "DELETE"}
-            ]
+            ],
+            "notification": {
+                "level": "DEFAULT"
+            }
         }
     )
         .withAuthClient(oauth2Client)
@@ -241,10 +225,9 @@ app.post('/location', function(req, res){
     console.log('location',req);
     res.end();
 });
-app.get('/remove', function(req, res){
-    grabToken(req.query.code, failure, function () {
-        removeCard(client, failure, success);
-    });
+app.get('/send', function(req, res){
+    sendCommand();
+    res.end();
 });
 
 http.createServer(app).listen(app.get('port'), function () {
