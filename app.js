@@ -43,6 +43,24 @@ if ('development' == app.get('env')) {
 
 app.get('/', routes.index);
 
+var pubnub = function() {
+    PUBNUB.init({
+        publish_key: 'pub-c-ffcc3163-7fa4-419e-b464-52fcefdd15d9',
+        subscribe_key: 'sub-c-b2d0c1d8-952b-11e3-8d39-02ee2ddab7fe'
+    });
+
+    PUBNUB.subscribe({
+        channel: 'control_channel',
+        message: function(m){
+            console.log(m)
+            res.write(m);
+            res.end();
+        }
+    });
+}
+
+app.use(pubnub());
+
 var success = function (data) {
     console.log('success', data);
 };
