@@ -41,6 +41,8 @@ if ('development' == app.get('env')) {
     app.use(express.errorHandler());
 }
 
+app.get('/', routes.index);
+
 var success = function (data) {
     console.log('success', data);
 };
@@ -60,6 +62,7 @@ var gotToken = function () {
             //insertHello(client, failure, success);
             //insertContact(client, failure, success);
             //insertLocation(client, failure, success);
+            
         });
 };
 var sendCommand = function () {
@@ -74,6 +77,10 @@ var sendCommand = function () {
             insertHello(client, failure, success);
         });
 };
+
+var goHome = function() {
+    app.get('/', routes.index);
+}
 
 // send a simple 'hello world' timeline card with a delete option
 var insertHello = function (client, errorCallback, successCallback) {
@@ -204,7 +211,8 @@ app.get('/', function (req, res) {
     } else {
         gotToken();
     }
-    res.write('Glass Mirror API with Node');
+    //res.write('Glass Mirror API with Node');
+    //app.get('/users', user.list);
     //res.sendfile('./index.html');
     res.end();
 
@@ -213,6 +221,7 @@ app.get('/oauth2callback', function (req, res) {
     // if we're able to grab the token, redirect the user back to the main page
     grabToken(req.query.code, failure, function () {
         res.redirect('/');
+        //app.get('/', routes.index);
         //res.sendfile('./index.html');
         //res.redirect('index.html');
     });
