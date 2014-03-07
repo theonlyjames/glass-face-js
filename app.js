@@ -10,8 +10,8 @@ var express = require('express')
 // Use environment variables to configure oauth client.
 // That way, you never need to ship these values, or worry
 // about accidentally committing them
-var oauth2Client = new OAuth2Client(process.env.MIRROR_DEMO_CLIENT_ID,
-    process.env.MIRROR_DEMO_CLIENT_SECRET, process.env.MIRROR_DEMO_REDIRECT_URL);
+var oauth2Client = new OAuth2Client('595501507573-fur8t36g998vo7im6vqvuts531fjtpcs.apps.googleusercontent.com',
+    'y58X_zUv44P9itQcTolVW-Yt', 'http://localhost:8081/oauth2callback');
 
 var app = express();
 
@@ -42,10 +42,11 @@ var gotToken = function () {
                 return;
             }
             console.log('mirror client', client);
-            listTimeline(client, failure, success);
-            insertHello(client, failure, success);
-            insertContact(client, failure, success);
-            insertLocation(client, failure, success);
+            //listTimeline(client, failure, success);
+            //insertHello(client, failure, success);
+            //insertContact(client, failure, success);
+            //insertLocation(client, failure, success);
+            //removeCard(client, failure, success);
         });
 };
 
@@ -61,6 +62,21 @@ var insertHello = function (client, errorCallback, successCallback) {
                 {"action": "DELETE"}
             ]
         }
+    )
+        .withAuthClient(oauth2Client)
+        .execute(function (err, data) {
+            if (!!err)
+                errorCallback(err);
+            else
+                successCallback(data);
+        });
+};
+
+// send a simple delete timelien card
+var removeCard = function (client, errorCallback, successCallback) {
+    client
+        .mirror.timeline.delete(
+        "d52459c9-5950-4006-8de9-1b88a44accfb"
     )
         .withAuthClient(oauth2Client)
         .execute(function (err, data) {
@@ -160,14 +176,17 @@ app.get('/', function (req, res) {
     } else {
         gotToken();
     }
-    res.write('Glass Mirror API with Node');
+    //res.write('Glass Mirror API with Node');
+    //res.sendfile('./index.html');
     res.end();
 
 });
 app.get('/oauth2callback', function (req, res) {
     // if we're able to grab the token, redirect the user back to the main page
     grabToken(req.query.code, failure, function () {
-        res.redirect('/');
+        //res.redirect('/');
+        //res.sendfile('./index.html');
+        res.redirect('index.html');
     });
 });
 app.post('/reply', function(req, res){
@@ -177,6 +196,11 @@ app.post('/reply', function(req, res){
 app.post('/location', function(req, res){
     console.log('location',req);
     res.end();
+});
+app.get('/remove', function(req, res){
+    grabToken(req.query.code, failure, function () {
+        removeCard(client, failure, success);
+    });
 });
 
 http.createServer(app).listen(app.get('port'), function () {
