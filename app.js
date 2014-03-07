@@ -14,6 +14,21 @@ var express = require('express')
 // from generated file 
 var path = require('path');
 
+// pubnub
+var pubnub = require("pubnub").init({
+    publish_key: 'pub-c-ffcc3163-7fa4-419e-b464-52fcefdd15d9',
+    subscribe_key: 'sub-c-b2d0c1d8-952b-11e3-8d39-02ee2ddab7fe'
+});
+
+pubnub.subscribe({
+    channel: 'control_channel',
+    message: function(m){
+        console.log(m)
+        //res.write(m);
+        //res.end();
+    }
+});
+
 // Use environment variables to configure oauth client.
 // That way, you never need to ship these values, or worry
 // about accidentally committing them
@@ -42,21 +57,7 @@ if ('development' == app.get('env')) {
 }
 
 app.get('/', routes.index);
-
-var pubnub = require("pubnub").init({
-    publish_key: 'pub-c-ffcc3163-7fa4-419e-b464-52fcefdd15d9',
-    subscribe_key: 'sub-c-b2d0c1d8-952b-11e3-8d39-02ee2ddab7fe'
-});
-
-pubnub.subscribe({
-    channel: 'control_channel',
-    message: function(m){
-        console.log(m)
-        //res.write(m);
-        //res.end();
-    }
-});
-
+app.get('/signedin', routes.signedin);
 
 var success = function (data) {
     console.log('success', data);
@@ -65,6 +66,7 @@ var failure = function (data) {
     console.log('failure', data);
 };
 var gotToken = function () {
+    //app.get('/signedin', routes.signedin);
     googleapis
         .discover('mirror', 'v1')
         .execute(function (err, client) {
@@ -73,7 +75,7 @@ var gotToken = function () {
                 return;
             }
             console.log('mirror client', client);
-            //listTimeline(client, failure, success);
+            listTimeline(client, failure, success);
             //insertHello(client, failure, success);
             //insertContact(client, failure, success);
             //insertLocation(client, failure, success);
@@ -88,20 +90,17 @@ var sendCommand = function () {
                 failure();
                 return;
             }
-            console.log('mirror client send command', client);
+            console.log('mirror client', client);
             insertHello(client, failure, success);
         });
 };
-
-var goHome = function() {
-    app.get('/', routes.index);
-}
 
 // send a simple 'hello world' timeline card with a delete option
 var insertHello = function (client, errorCallback, successCallback) {
     client
         .mirror.timeline.insert(
         {
+            "id": "jamescard",
             "text": "HELLO JAMES",
             "callbackUrl": "https://mirrornotifications.appspot.com/forward?url=http://localhost:8081/reply",
             "menuItems": [
@@ -112,21 +111,6 @@ var insertHello = function (client, errorCallback, successCallback) {
                 "level": "DEFAULT"
             }
         }
-    )
-        .withAuthClient(oauth2Client)
-        .execute(function (err, data) {
-            if (!!err)
-                errorCallback(err);
-            else
-                successCallback(data);
-        });
-};
-
-// send a simple delete timelien card
-var removeCard = function (client, errorCallback, successCallback) {
-    client
-        .mirror.timeline.delete(
-        "d52459c9-5950-4006-8de9-1b88a44accfb"
     )
         .withAuthClient(oauth2Client)
         .execute(function (err, data) {
@@ -214,7 +198,7 @@ var grabToken = function (code, errorCallback, successCallback) {
     });
 };
 
-app.get('/', function (req, res) {
+app.get('/signin', function (req, res) {
     if (!oauth2Client.credentials) {
         // generates a url that allows offline access and asks permissions
         // for Mirror API scope.
@@ -226,19 +210,18 @@ app.get('/', function (req, res) {
     } else {
         gotToken();
     }
-    //res.write('Glass Mirror API with Node');
-    //app.get('/users', user.list);
-    //res.sendfile('./index.html');
+    res.write('Glass Mirror API with Node');
     res.end();
 
 });
 app.get('/oauth2callback', function (req, res) {
     // if we're able to grab the token, redirect the user back to the main page
     grabToken(req.query.code, failure, function () {
-        res.redirect('/');
+        res.redirect('/signedin');
         //app.get('/', routes.index);
         //res.sendfile('./index.html');
         //res.redirect('index.html');
+        res.end();
     });
 });
 app.post('/reply', function(req, res){
@@ -251,6 +234,7 @@ app.post('/location', function(req, res){
 });
 app.get('/send', function(req, res){
     sendCommand();
+    res.write('Glass Mirror API with Node');
     res.end();
 });
 
