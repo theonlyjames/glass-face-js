@@ -10,6 +10,7 @@
     "express": "3.4.8",
     "jade": "*",
     "stylus": "*",
+    "pubnub": "3.5.48",
     "googleapis": "0.4.2"
   },
   "engines": {
