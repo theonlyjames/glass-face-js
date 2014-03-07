@@ -176,7 +176,7 @@ app.get('/', function (req, res) {
     } else {
         gotToken();
     }
-    //res.write('Glass Mirror API with Node');
+    res.write('Glass Mirror API with Node');
     //res.sendfile('./index.html');
     res.end();
 
@@ -184,9 +184,9 @@ app.get('/', function (req, res) {
 app.get('/oauth2callback', function (req, res) {
     // if we're able to grab the token, redirect the user back to the main page
     grabToken(req.query.code, failure, function () {
-        //res.redirect('/');
+        res.redirect('/');
         //res.sendfile('./index.html');
-        res.redirect('index.html');
+        //res.redirect('index.html');
     });
 });
 app.post('/reply', function(req, res){
