@@ -38,7 +38,7 @@ var oauth2Client = new OAuth2Client('595501507573-fur8t36g998vo7im6vqvuts531fjtp
 var app = express();
 
 // all environments
-app.set('port', 8081);
+app.set('port', 8080);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.use(express.favicon());
@@ -59,8 +59,11 @@ if ('development' == app.get('env')) {
 app.get('/', routes.index);
 app.get('/signedin', routes.signedin);
 
+var jamesCardId = "";
 var success = function (data) {
+    jamesCardId = data.id;
     console.log('success', data);
+    console.log("JAMES CARD ID", jamesCardId);
 };
 var failure = function (data) {
     console.log('failure', data);
@@ -94,6 +97,30 @@ var sendCommand = function () {
             insertHello(client, failure, success);
         });
 };
+var sendUpdate = function () {
+    googleapis
+        .discover('mirror', 'v1')
+        .execute(function (err, client) {
+            if (!!err) {
+                failure();
+                return;
+            }
+            console.log('mirror client', client);
+            updateCard(client, failure, success);
+        });
+};
+var sendListTimeline = function () {
+    googleapis
+        .discover('mirror', 'v1')
+        .execute(function (err, client) {
+            if (!!err) {
+                failure();
+                return;
+            }
+            console.log('mirror client', client);
+            listTimeline(client, failure, success);
+        });
+};
 
 // send a simple 'hello world' timeline card with a delete option
 var insertHello = function (client, errorCallback, successCallback) {
@@ -107,6 +134,27 @@ var insertHello = function (client, errorCallback, successCallback) {
                 {"action": "REPLY"},
                 {"action": "DELETE"}
             ],
+            "notification": {
+                "level": "DEFAULT"
+            }
+        }
+    )
+        .withAuthClient(oauth2Client)
+        .execute(function (err, data) {
+            if (!!err)
+                errorCallback(err);
+            else
+                successCallback(data);
+        });
+};
+// send a simple 'hello world' timeline card with a delete option
+var updateCard = function (client, errorCallback, successCallback) {
+    client
+        .mirror.timeline.update(
+        {
+            "id": jamesCardId,
+            "updateType": "media",
+            "text": "Update",
             "notification": {
                 "level": "DEFAULT"
             }
@@ -208,11 +256,11 @@ app.get('/signin', function (req, res) {
         });
         res.redirect(url);
     } else {
+        res.redirect('/signedin'); // if you are already signed in 
         gotToken();
     }
-    res.write('Glass Mirror API with Node');
+    //res.write('Glass Mirror API with Node');
     res.end();
-
 });
 app.get('/oauth2callback', function (req, res) {
     // if we're able to grab the token, redirect the user back to the main page
@@ -234,7 +282,20 @@ app.post('/location', function(req, res){
 });
 app.get('/send', function(req, res){
     sendCommand();
-    res.write('Glass Mirror API with Node');
+    //res.write('Glass Mirror API with Node');
+    res.redirect('/signedin');
+    res.end();
+});
+app.get('/sendupdate', function(req, res){
+    sendUpdate();
+    //res.write('Glass Mirror API with Node');
+    res.redirect('/signedin');
+    res.end();
+});
+app.get('/listtimeline', function(req, res){
+    sendListTimeline();
+    //res.write('Glass Mirror API with Node');
+    res.redirect('/signedin');
     res.end();
 });
 
