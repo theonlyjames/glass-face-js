@@ -33,7 +33,7 @@ pubnub.subscribe({
 // That way, you never need to ship these values, or worry
 // about accidentally committing them
 var oauth2Client = new OAuth2Client('595501507573-fur8t36g998vo7im6vqvuts531fjtpcs.apps.googleusercontent.com',
-    'y58X_zUv44P9itQcTolVW-Yt', 'http://localhost:8081/oauth2callback');
+    'y58X_zUv44P9itQcTolVW-Yt', 'http://localhost:8080/oauth2callback');
 
 var app = express();
 
@@ -129,7 +129,7 @@ var insertHello = function (client, errorCallback, successCallback) {
         {
             "id": "jamescard",
             "text": "HELLO JAMES",
-            "callbackUrl": "https://mirrornotifications.appspot.com/forward?url=http://localhost:8081/reply",
+            "callbackUrl": "https://mirrornotifications.appspot.com/forward?url=http://localhost:8080/reply",
             "menuItems": [
                 {"action": "REPLY"},
                 {"action": "DELETE"}
@@ -171,11 +171,12 @@ var updateCard = function (client, errorCallback, successCallback) {
 
 // send a simple 'hello world' timeline card with a delete option
 var insertLocation = function (client, errorCallback, successCallback) {
+    console.log(client);
     client
         .mirror.timeline.insert(
         {
             "text": "Let's meet at the Hacker Dojo!",
-            "callbackUrl": "https://mirrornotifications.appspot.com/forward?url=http://localhost:8081/reply",
+            "callbackUrl": "https://mirrornotifications.appspot.com/forward?url=http://localhost:8080/reply",
             "location": {
                 "kind": "mirror#location",
                 "latitude": 37.4028344,
