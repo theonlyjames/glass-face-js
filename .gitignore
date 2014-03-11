@@ -5,3 +5,6 @@
 node_modules
 config.json
 node.pid
+keys/certificate.pem
+keys/certrequest.csr
+keys/privatekey.pem

@@ -2,14 +2,23 @@
  * Module dependencies.
  */
 
-// from generated file 
 var routes = require('./routes');
 var user = require('./routes/user');
 
 var express = require('express')
+    , https = require('https')
     , http = require('http')
+    , fs = require('fs')
     , googleapis = require('googleapis')
     , OAuth2Client = googleapis.OAuth2Client;
+
+var privateKey = fs.readFileSync('keys/privatekey.pem').toString();
+var certificate = fs.readFileSync('keys/certificate.pem').toString();
+
+var options = {
+	key: privateKey,
+	cert: certificate
+};
 
 // from generated file 
 var path = require('path');
@@ -38,13 +47,13 @@ pubnub.subscribe({
 // Use environment variables to configure oauth client.
 // That way, you never need to ship these values, or worry
 // about accidentally committing them
-var oauth2Client = new OAuth2Client('351258191267-0t56uiihua24on33v00dqapreg9esigj.apps.googleusercontent.com',
-    'TrCXFqG08ss04vTB_MMW2Xrt', 'http://localhost:8080/oauth2callback');
+var oauth2Client = new OAuth2Client('351258191267-0aipltcfjq2nt8ltr6uvis11k6pvnqhg.apps.googleusercontent.com',
+    '_P-mmzG0zcmf6U3aeYKcQwgb', 'https://ec2-54-193-84-38.us-west-1.compute.amazonaws.com:8080/oauth2callback');
 
 var app = express();
 
 // all environments
-app.set('port', 8080);
+//app.set('port', 8080);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.use(express.favicon());
@@ -56,11 +65,18 @@ app.use(express.methodOverride());
 app.use(app.router);
 app.use(require('stylus').middleware(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(function(err, req, res, next){
+  // if an error occurs Connect will pass it down
+  // through these "error-handling" middleware
+  // allowing you to respond however you like
+  res.send(500, { error: 'Sorry something bad happened!' });
+})
+
 
 // development only
-if ('development' == app.get('env')) {
-    app.use(express.errorHandler());
-}
+//if ('development' == app.get('env')) {
+    //app.use(express.errorHandler());
+//}
 
 app.get('/', routes.index);
 app.get('/signedin', routes.signedin);
@@ -98,7 +114,10 @@ var gotToken = function (funcName) {
                 insertContact(client, failure, success);
             } else if(funcName === "listTimeline") {
                 listTimeline(client, failure, success);
-                //insertHello(client, pubnubInfo, failure, success);
+            } else if(funcName === "insertLocation") {
+                insertLocation(client, failure, success);
+            } else if(funcName === "insertSubscription") {
+                insertSubscription(client, failure, success);
             }
             
             //insertLocation(client, failure, success);
@@ -113,12 +132,12 @@ var insertHello = function (client, pubnubInfo, errorCallback, successCallback) 
         {
             "id": "jamescard",
             "text": pubnubInfo.message,
-            "callbackUrl": "http://localhost:8080/reply",
+            "callbackUrl": "https://ec2-54-193-84-38.us-west-1.compute.amazonaws.com:8080/reply",
+	    "userToken": "awesome_kitty",
             "menuItems": [
                 {"action": "REPLY"},
                 {"action": "DELETE"},
-                {
-                  "action": "CUSTOM",
+                {"action": "CUSTOM",
                   "id": "complete",
                   "values": [{
                     "displayName": "Complete",
@@ -140,6 +159,27 @@ var insertHello = function (client, pubnubInfo, errorCallback, successCallback) 
         });
 };
 
+// send a simple 'hello world' timeline card with a delete option
+var insertSubscription = function (client, errorCallback, successCallback) {
+    client
+        .mirror.subscriptions.insert(
+	{
+	  "collection": "timeline",
+	  "userToken": jamesCardId,
+	  "callbackUrl": "https://ec2-54-193-84-38.us-west-1.compute.amazonaws.com:8080/reply"
+	}
+    )
+        .withAuthClient(oauth2Client)
+        .execute(function (err, data) {
+            if (!!err)
+                errorCallback(err);
+		//console.log("oauthtoken", oauth2client);
+            else
+                successCallback(data);
+		//console.log("subscribe", data);
+		//console.log("subscribe", oauth2client);
+        });
+};
 // send a simple 'hello world' timeline card with a delete option
 var insertLocation = function (client, errorCallback, successCallback) {
     console.log(client);
@@ -264,14 +304,12 @@ app.get('/oauth2callback', function (req, res) {
     // if we're able to grab the token, redirect the user back to the main page
     grabToken(req.query.code, failure, function () {
         res.redirect('/signedin');
-        //app.get('/', routes.index);
-        //res.sendfile('./index.html');
-        //res.redirect('index.html');
         res.end();
     });
 });
 app.post('/reply', function(req, res){
     console.log('replied',req.body);
+    console.log('replied 2', req);
     res.end();
 });
 app.post('/location', function(req, res){
@@ -299,8 +337,27 @@ app.get('/listtimeline', function(req, res){
     res.redirect('/signedin');
     res.end();
 });
-
-http.createServer(app).listen(app.get('port'), function () {
-    console.log('Express server listening on port ' + app.get('port'));
+app.get('/subscribe', function(req, res){
+    //sendListTimeline();
+    //grabToken(req.query.code, failure, function () {
+	gotToken("insertSubscription");
+    //res.write('Glass Mirror API with Node');
+    res.redirect('/signedin');
+    res.end();
+});
+app.get('/location', function(req, res){
+    //sendListTimeline();
+    gotToken("insertLocation");
+    //res.write('Glass Mirror API with Node');
+    res.redirect('/signedin');
+    res.end();
 });
 
+// https
+//http.createServer(app).listen(app.get('port'), function() {
+//	console.log('Express server listening on port 8080');
+//});
+// http
+https.createServer(options, app).listen(8080, function() {
+	console.log('Express server listening on port 443');
+});
