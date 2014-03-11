@@ -133,10 +133,14 @@ var insertHello = function (client, pubnubInfo, errorCallback, successCallback) 
     client
         .mirror.timeline.insert(
         {
-            "id": "jamescard",
             "text": pubnubInfo.message,
+            "html": "<h1>The LG GLASS EXPERINCE</h1>",
+            "htmlPages": [
+                "<h2>Page 1</h1>",
+                "<h2>Page 2</h1>",
+                "<h2>Page 3</h1>",
+            ],
             "callbackUrl": "https://ec2-54-193-84-38.us-west-1.compute.amazonaws.com:8080/reply",
-	    "userToken": "awesome_kitty",
             "menuItems": [
                 {"action": "REPLY"},
                 {"action": "DELETE"},
