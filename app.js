@@ -81,6 +81,7 @@ app.use(function(err, req, res, next){
 app.get('/', routes.index);
 app.get('/signedin', routes.signedin);
 
+var cardReplyId = "";
 var jamesCardId = "";
 var success = function (data) {
     jamesCardId = data.id;
@@ -118,6 +119,8 @@ var gotToken = function (funcName) {
                 insertLocation(client, failure, success);
             } else if(funcName === "insertSubscription") {
                 insertSubscription(client, failure, success);
+            } else if(funcName === "getReply") {
+                getReply(client, cardReplyId, failure, success);
             }
             
             //insertLocation(client, failure, success);
@@ -148,6 +151,23 @@ var insertHello = function (client, pubnubInfo, errorCallback, successCallback) 
             "notification": {
                 "level": "DEFAULT"
             }
+        }
+    )
+        .withAuthClient(oauth2Client)
+        .execute(function (err, data) {
+            if (!!err)
+                errorCallback(err);
+            else
+                successCallback(data);
+        });
+};
+
+// get card information 
+var getReply = function (client, cardReplyId, errorCallback, successCallback) {
+    client
+        .mirror.timeline.get(
+        {
+            "id": cardReplyId
         }
     )
         .withAuthClient(oauth2Client)
@@ -308,10 +328,15 @@ app.get('/oauth2callback', function (req, res) {
     });
 });
 app.post('/reply', function(req, res){
-    console.log('replied',req.body);
-    console.log('replied 2', req);
+    cardReplyId = req.body.itemId;
+    console.log('replied', cardReplyId);
+    gotToken("getReply");
     res.end();
 });
+//app.get('/reply', function(req, res){
+//    console.log('replied using GET: ',req.body);
+//    res.end();
+//});
 app.post('/location', function(req, res){
     console.log('location',req);
     res.end();
