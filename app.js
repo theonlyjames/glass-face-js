@@ -14,23 +14,44 @@ var express = require('express')
 // from generated file 
 var path = require('path');
 
+// pubnub
+var pubnub = require("pubnub").init({
+    publish_key: 'pub-c-ffcc3163-7fa4-419e-b464-52fcefdd15d9',
+    subscribe_key: 'sub-c-b2d0c1d8-952b-11e3-8d39-02ee2ddab7fe'
+});
+
+var pubnubInfo = "init info";
+pubnub.subscribe({
+    channel: 'control_channel',
+    message: function(m){
+        console.log(m)
+        //res.write(m);
+        //res.end();
+        pubnubInfo = m;
+        if(!oauth2Client.credentials) {
+            return;
+        }
+        gotToken("listTimeline");
+    }
+});
+
 // Use environment variables to configure oauth client.
 // That way, you never need to ship these values, or worry
 // about accidentally committing them
-var oauth2Client = new OAuth2Client('595501507573-fur8t36g998vo7im6vqvuts531fjtpcs.apps.googleusercontent.com',
-    'y58X_zUv44P9itQcTolVW-Yt', 'http://localhost:8081/oauth2callback');
+var oauth2Client = new OAuth2Client('351258191267-0t56uiihua24on33v00dqapreg9esigj.apps.googleusercontent.com',
+    'TrCXFqG08ss04vTB_MMW2Xrt', 'http://localhost:8080/oauth2callback');
 
 var app = express();
 
 // all environments
-app.set('port', 8081);
+app.set('port', 8080);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.use(express.favicon());
 app.use(express.logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded());
-app.use(express.bodyParser());
+//app.use(express.bodyParser());
 app.use(express.methodOverride());
 app.use(app.router);
 app.use(require('stylus').middleware(path.join(__dirname, 'public')));
@@ -42,29 +63,20 @@ if ('development' == app.get('env')) {
 }
 
 app.get('/', routes.index);
+app.get('/signedin', routes.signedin);
 
-var pubnub = require("pubnub").init({
-    publish_key: 'pub-c-ffcc3163-7fa4-419e-b464-52fcefdd15d9',
-    subscribe_key: 'sub-c-b2d0c1d8-952b-11e3-8d39-02ee2ddab7fe'
-});
-
-pubnub.subscribe({
-    channel: 'control_channel',
-    message: function(m){
-        console.log(m)
-        //res.write(m);
-        //res.end();
-    }
-});
-
-
+var jamesCardId = "";
 var success = function (data) {
+    jamesCardId = data.id;
     console.log('success', data);
+    console.log("JAMES CARD ID", jamesCardId);
 };
 var failure = function (data) {
     console.log('failure', data);
 };
-var gotToken = function () {
+var gotToken = function (funcName) {
+    //app.get('/signedin', routes.signedin);
+    pubInfo = pubnubInfo;
     googleapis
         .discover('mirror', 'v1')
         .execute(function (err, client) {
@@ -73,40 +85,46 @@ var gotToken = function () {
                 return;
             }
             console.log('mirror client', client);
-            //listTimeline(client, failure, success);
-            //insertHello(client, failure, success);
-            //insertContact(client, failure, success);
+            // run insertHello once to get credentials
+            //
+            if(!oauth2Client.credentials) {
+                insertHello(client, pubInfo, failure, success);
+                return;
+                consoe.log("FIRST INSERT HELLO", client);
+            }
+            if(funcName === "insertHello") {
+                insertHello(client, pubInfo, failure, success);
+            } else if(funcName === "insertContact") {
+                insertContact(client, failure, success);
+            } else if(funcName === "listTimeline") {
+                listTimeline(client, failure, success);
+                //insertHello(client, pubnubInfo, failure, success);
+            }
+            
             //insertLocation(client, failure, success);
             
         });
 };
-var sendCommand = function () {
-    googleapis
-        .discover('mirror', 'v1')
-        .execute(function (err, client) {
-            if (!!err) {
-                failure();
-                return;
-            }
-            console.log('mirror client send command', client);
-            insertHello(client, failure, success);
-        });
-};
-
-var goHome = function() {
-    app.get('/', routes.index);
-}
 
 // send a simple 'hello world' timeline card with a delete option
-var insertHello = function (client, errorCallback, successCallback) {
+var insertHello = function (client, pubnubInfo, errorCallback, successCallback) {
     client
         .mirror.timeline.insert(
         {
-            "text": "HELLO JAMES",
-            "callbackUrl": "https://mirrornotifications.appspot.com/forward?url=http://localhost:8081/reply",
+            "id": "jamescard",
+            "text": pubnubInfo.message,
+            "callbackUrl": "http://localhost:8080/reply",
             "menuItems": [
                 {"action": "REPLY"},
-                {"action": "DELETE"}
+                {"action": "DELETE"},
+                {
+                  "action": "CUSTOM",
+                  "id": "complete",
+                  "values": [{
+                    "displayName": "Complete",
+                    "iconUrl": "http://example.com/icons/complete.png"
+                  }]
+                }
             ],
             "notification": {
                 "level": "DEFAULT"
@@ -122,28 +140,14 @@ var insertHello = function (client, errorCallback, successCallback) {
         });
 };
 
-// send a simple delete timelien card
-var removeCard = function (client, errorCallback, successCallback) {
-    client
-        .mirror.timeline.delete(
-        "d52459c9-5950-4006-8de9-1b88a44accfb"
-    )
-        .withAuthClient(oauth2Client)
-        .execute(function (err, data) {
-            if (!!err)
-                errorCallback(err);
-            else
-                successCallback(data);
-        });
-};
-
 // send a simple 'hello world' timeline card with a delete option
 var insertLocation = function (client, errorCallback, successCallback) {
+    console.log(client);
     client
         .mirror.timeline.insert(
         {
             "text": "Let's meet at the Hacker Dojo!",
-            "callbackUrl": "https://mirrornotifications.appspot.com/forward?url=http://localhost:8081/reply",
+            "callbackUrl": "https://mirrornotifications.appspot.com/forward?url=http://localhost:8080/reply",
             "location": {
                 "kind": "mirror#location",
                 "latitude": 37.4028344,
@@ -200,8 +204,34 @@ var listTimeline = function (client, errorCallback, successCallback) {
                 errorCallback(err);
             else
                 successCallback(data);
+                console.log("LIST ITEMS", data.items.length); 
+                for(var i = 0; i < data.items.length; i++) {
+                    deleteTimeline(client, data.items[i].id, failure, success);
+                    console.log("item id: ", data.items[i].id);
+                    if(i === 0) {
+                        gotToken("insertHello");
+                    }
+                }
         });
 };
+
+var deleteTimeline = function (client, item, errorCallback, successCallback) {
+    client
+        .mirror.timeline.delete({
+            "id": item
+        })
+        .withAuthClient(oauth2Client)
+        .execute(function (err, data) {
+            if (!!err)
+                errorCallback(err);
+            else
+                successCallback(data);
+                //console.log("LIST ITEMS : POST DELETE", data); 
+                //gotToken("insertHello");
+        });
+};
+
+
 var grabToken = function (code, errorCallback, successCallback) {
     oauth2Client.getToken(code, function (err, tokens) {
         if (!!err) {
@@ -214,7 +244,7 @@ var grabToken = function (code, errorCallback, successCallback) {
     });
 };
 
-app.get('/', function (req, res) {
+app.get('/signin', function (req, res) {
     if (!oauth2Client.credentials) {
         // generates a url that allows offline access and asks permissions
         // for Mirror API scope.
@@ -224,22 +254,24 @@ app.get('/', function (req, res) {
         });
         res.redirect(url);
     } else {
+        res.redirect('/signedin'); // if you are already signed in 
         gotToken();
     }
-    //res.sendfile('./index.html');
+    //res.write('Glass Mirror API with Node');
     res.end();
-
 });
 app.get('/oauth2callback', function (req, res) {
     // if we're able to grab the token, redirect the user back to the main page
     grabToken(req.query.code, failure, function () {
-        res.redirect('/');
+        res.redirect('/signedin');
         //app.get('/', routes.index);
         //res.sendfile('./index.html');
+        //res.redirect('index.html');
+        res.end();
     });
 });
 app.post('/reply', function(req, res){
-    console.log('replied',req);
+    console.log('replied',req.body);
     res.end();
 });
 app.post('/location', function(req, res){
@@ -247,7 +279,24 @@ app.post('/location', function(req, res){
     res.end();
 });
 app.get('/send', function(req, res){
-    sendCommand();
+    //sendCard();
+    gotToken("insertHello");
+    //res.write('Glass Mirror API with Node');
+    res.redirect('/signedin');
+    res.end();
+});
+app.get('/sendupdate', function(req, res){
+    //sendUpdate();
+    console.log("/sendupdate,", res);
+    //res.write('Glass Mirror API with Node');
+    res.redirect('/signedin');
+    res.end();
+});
+app.get('/listtimeline', function(req, res){
+    //sendListTimeline();
+    gotToken("listTimeline");
+    //res.write('Glass Mirror API with Node');
+    res.redirect('/signedin');
     res.end();
 });
 
