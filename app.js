@@ -113,7 +113,7 @@ var insertHello = function (client, pubnubInfo, errorCallback, successCallback) 
         {
             "id": "jamescard",
             "text": pubnubInfo.message,
-            "callbackUrl": "http://localhost:8080/reply",
+            "callbackUrl": "http://ec2-54-193-84-38.us-west-1.compute.amazonaws.com:8080/reply",
             "menuItems": [
                 {"action": "REPLY"},
                 {"action": "DELETE"},
