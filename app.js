@@ -330,7 +330,8 @@ app.get('/oauth2callback', function (req, res) {
 app.post('/reply', function(req, res){
     cardReplyId = req.body.itemId;
     console.log('replied', cardReplyId);
-    gotToken("getReply");
+    console.log('replied full response', req.body);
+    //gotToken("getReply");
     res.end();
 });
 //app.get('/reply', function(req, res){
