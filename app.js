@@ -2,6 +2,18 @@
  * Module dependencies.
  */
 
+<<<<<<< HEAD
+=======
+// from generated file 
+//var fs = require('fs');
+//var hskey = fs.readFileSync('./keys/google/rsaprivkey.pem');
+//var hscert = fs.readFileSync('./keys/google/rsacert.pem');
+//var options = {
+//	key: hskey,
+//	cert: hscert
+//};
+
+>>>>>>> 638a2866f5502ccc826f7f7ec7d1b2fcca234710
 var routes = require('./routes');
 var user = require('./routes/user');
 
