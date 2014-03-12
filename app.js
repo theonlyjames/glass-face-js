@@ -40,7 +40,7 @@ pubnub.subscribe({
         if(!oauth2Client.credentials) {
             return;
         }
-        gotToken("listTimeline");
+        gotToken("updateActorCard");
     }
 });
 
@@ -84,7 +84,6 @@ app.get('/signedin', routes.signedin);
 var cardReplyId = "";
 var jamesCardId = "";
 var success = function (data) {
-    jamesCardId = data.id;
     console.log('success', data);
     console.log("JAMES CARD ID", jamesCardId);
 };
@@ -103,14 +102,16 @@ var gotToken = function (funcName) {
             }
             console.log('mirror client', client);
             // run insertHello once to get credentials
-            //
+            insertHello(client, failure, success);
+            insertActorCard(client, pubInfo, failure, success);
             if(!oauth2Client.credentials) {
-                insertHello(client, pubInfo, failure, success);
                 return;
                 consoe.log("FIRST INSERT HELLO", client);
             }
             if(funcName === "insertHello") {
                 insertHello(client, pubInfo, failure, success);
+            } else if(funcName === "updateActorCard") {
+                updateActorCard(client, pubInfo, failure, success);
             } else if(funcName === "insertContact") {
                 insertContact(client, failure, success);
             } else if(funcName === "listTimeline") {
@@ -129,17 +130,37 @@ var gotToken = function (funcName) {
 };
 
 // send a simple 'hello world' timeline card with a delete option
-var insertHello = function (client, pubnubInfo, errorCallback, successCallback) {
+var coverId = "";
+var insertHello = function (client, errorCallback, successCallback) {
     client
         .mirror.timeline.insert(
         {
-            "text": pubnubInfo.message,
-            "html": "<h1>The LG GLASS EXPERINCE</h1>",
-            "htmlPages": [
-                "<h2>Page 1</h1>",
-                "<h2>Page 2</h1>",
-                "<h2>Page 3</h1>",
-            ],
+            "html": "<article class=\"photo\">\n  <img src=\"http://www.androidnova.org/wp-content/uploads/2013/07/lg1.jpg\" width=\"100%\" height=\"100%\">\n  <div class=\"overlay-gradient-tall-dark\"/>\n  <section>\n    <p class=\"text-auto-size\">Welcome to the LG Glass Experience</p>\n  </section>\n</article>\n",
+            "bundleId": "lgGlass",
+            "isBundleCover": true,
+            "notification": {
+                "level": "DEFAULT"
+            }
+        }
+    )
+        .withAuthClient(oauth2Client)
+        .execute(function (err, data) {
+            if (!!err)
+                errorCallback(err);
+            else
+                successCallback(data);
+                coverId = data.id;
+        });
+};
+
+var insertActorCard = function (client, pubnubInfo, errorCallback, successCallback) {
+    client
+        .mirror.timeline.insert(
+        {
+            "id": jamesCardId,
+            "html": "<article class=\"photo\">\n  <ul class=\"mosaic mosaic3\">\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/washington.jpg)\"></li>\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/lincoln.png)\"></li>\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/obama.jpg)\"></li>\n  </ul>\n  <div class=\"overlay-gradient-tall-dark\"/>\n  <section>\n    <p class=\"text-auto-size\">"+ pubnubInfo.message + "</p>\n  </section>\n</article>\n",
+            "bundleId": "lgGlass",
+            "bundleCover": false,
             "callbackUrl": "https://ec2-54-193-84-38.us-west-1.compute.amazonaws.com:8080/reply",
             "menuItems": [
                 {"action": "REPLY"},
@@ -163,6 +184,43 @@ var insertHello = function (client, pubnubInfo, errorCallback, successCallback) 
                 errorCallback(err);
             else
                 successCallback(data);
+                jamesCardId = data.id;
+        });
+};
+
+var updateActorCard = function (client, pubnubInfo, errorCallback, successCallback) {
+    client
+        .mirror.timeline.update(
+        {
+            "id": jamesCardId,
+            "html": "<article class=\"photo\">\n  <ul class=\"mosaic mosaic3\">\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/washington.jpg)\"></li>\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/lincoln.png)\"></li>\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/obama.jpg)\"></li>\n  </ul>\n  <div class=\"overlay-gradient-tall-dark\"/>\n  <section>\n    <p class=\"text-auto-size\">"+ pubnubInfo.message + "</p>\n  </section>\n</article>\n",
+            "bundleId": "lgGlass",
+            "bundleCover": false,
+            "callbackUrl": "https://ec2-54-193-84-38.us-west-1.compute.amazonaws.com:8080/reply",
+            "menuItems": [
+                {"action": "REPLY"},
+                {"action": "DELETE"},
+                {"action": "CUSTOM",
+                  "id": "complete",
+                  "values": [{
+                    "displayName": "Complete",
+                    "iconUrl": "http://example.com/icons/complete.png"
+                  }]
+                }
+            ],
+            "notification": {
+                "level": "DEFAULT"
+            }
+        }
+    )
+        .withAuthClient(oauth2Client)
+        .execute(function (err, data) {
+            if (!!err)
+                errorCallback(err);
+            else
+                iscover = false;
+                successCallback(data);
+                coverId = data.id;
         });
 };
 
@@ -197,11 +255,9 @@ var insertSubscription = function (client, errorCallback, successCallback) {
         .execute(function (err, data) {
             if (!!err)
                 errorCallback(err);
-		//console.log("oauthtoken", oauth2client);
             else
                 successCallback(data);
-		//console.log("subscribe", data);
-		//console.log("subscribe", oauth2client);
+                jamesCardId = data.id
         });
 };
 // send a simple 'hello world' timeline card with a delete option
@@ -273,7 +329,7 @@ var listTimeline = function (client, errorCallback, successCallback) {
                     deleteTimeline(client, data.items[i].id, failure, success);
                     console.log("item id: ", data.items[i].id);
                     if(i === 0) {
-                        gotToken("insertHello");
+                        gotToken("updateActorCard");
                     }
                 }
         });
