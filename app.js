@@ -201,7 +201,7 @@ var updateCards = function (client, data, errorCallback, successCallback) {
         .mirror.timeline.update(
         {
             "id": jamesCardId,
-            "html": "<article class=\"photo\">\n  <ul class=\"mosaic mosaic3\">\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/washington.jpg)\"></li>\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/lincoln.png)\"></li>\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/obama.jpg)\"></li>\n  </ul>\n  <div class=\"overlay-gradient-tall-dark\"/>\n  <section>\n    <p class=\"text-auto-size\">"+ pubnubInfo.message + "</p>\n  </section>\n</article>\n",
+            "html": "<article class=\"photo\">\n  <ul class=\"mosaic mosaic3\">\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/washington.jpg)\"></li>\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/lincoln.png)\"></li>\n    <li style=\"background-image: url(https://mirror-api-playground.appspot.com/links/obama.jpg)\"></li>\n  </ul>\n  <div class=\"overlay-gradient-tall-dark\"/>\n  <section>\n    <p class=\"text-auto-size\">"+ data.message + "</p>\n  </section>\n</article>\n",
             "bundleId": "lgGlass",
             "bundleCover": false,
             "callbackUrl": "https://ec2-54-193-84-38.us-west-1.compute.amazonaws.com:8080/reply",
@@ -226,7 +226,6 @@ var updateCards = function (client, data, errorCallback, successCallback) {
             if (!!err)
                 errorCallback(err);
             else
-                iscover = false;
                 successCallback(data);
                 coverId = data.id;
         });
