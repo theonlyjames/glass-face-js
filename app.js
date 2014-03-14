@@ -90,7 +90,7 @@ var success = function (data) {
 var failure = function (data) {
     console.log('failure', data);
 };
-var gotToken = function (funcName) {
+var gotToken = function (func) {
     //app.get('/signedin', routes.signedin);
     pubInfo = pubnubInfo;
     googleapis
@@ -102,30 +102,33 @@ var gotToken = function (funcName) {
             }
             console.log('mirror client', client);
             // run insertHello once to get credentials
-            insertHello(client, failure, success);
-            insertActorCard(client, pubInfo, failure, success);
             if(!oauth2Client.credentials) {
                 return;
                 consoe.log("FIRST INSERT HELLO", client);
             }
-            if(funcName === "insertHello") {
-                insertHello(client, pubInfo, failure, success);
-            } else if(funcName === "updateActorCard") {
-                updateActorCard(client, pubInfo, failure, success);
-            } else if(funcName === "insertContact") {
-                insertContact(client, failure, success);
-            } else if(funcName === "listTimeline") {
-                listTimeline(client, failure, success);
-            } else if(funcName === "insertLocation") {
-                insertLocation(client, failure, success);
-            } else if(funcName === "insertSubscription") {
-                insertSubscription(client, failure, success);
-            } else if(funcName === "getReply") {
-                getReply(client, cardReplyId, failure, success);
+            func(client, failure, success);
+        });
+};
+
+var testFunction = function (client, errorCallback, successCallback) {
+    client
+        .mirror.timeline.insert(
+        {
+            "html": "<article class=\"photo\">\n  <img src=\"http://www.androidnova.org/wp-content/uploads/2013/07/lg1.jpg\" width=\"100%\" height=\"100%\">\n  <div class=\"overlay-gradient-tall-dark\"/>\n  <section>\n    <p class=\"text-auto-size\">Welcome to the LG Glass Experience</p>\n  </section>\n</article>\n",
+            "bundleId": "lgGlass",
+            "isBundleCover": true,
+            "notification": {
+                "level": "DEFAULT"
             }
-            
-            //insertLocation(client, failure, success);
-            
+        }
+    )
+        .withAuthClient(oauth2Client)
+        .execute(function (err, data) {
+            if (!!err)
+                errorCallback(err);
+            else
+                successCallback(data);
+                coverId = data.id;
         });
 };
 
@@ -404,7 +407,7 @@ app.post('/location', function(req, res){
 });
 app.get('/send', function(req, res){
     //sendCard();
-    gotToken("insertHello");
+    gotToken(testFunction);
     //res.write('Glass Mirror API with Node');
     res.redirect('/signedin');
     res.end();
