@@ -40,9 +40,14 @@ pubnub.subscribe({
         if(!oauth2Client.credentials) {
             return;
         }
-        gotToken("updateActorCard");
+        //parseJson(m);
+        gotToken(updateCards);
     }
 });
+
+var parseJson = function(data) {
+    // TODO: possibly parse before giving to functions
+};
 
 // Use environment variables to configure oauth client.
 // That way, you never need to ship these values, or worry
@@ -91,7 +96,6 @@ var failure = function (data) {
     console.log('failure', data);
 };
 var gotToken = function (func) {
-    //app.get('/signedin', routes.signedin);
     pubInfo = pubnubInfo;
     googleapis
         .discover('mirror', 'v1')
@@ -103,14 +107,15 @@ var gotToken = function (func) {
             console.log('mirror client', client);
             // run insertHello once to get credentials
             if(!oauth2Client.credentials) {
-                return;
+                insertHell(client, failure, success);
                 consoe.log("FIRST INSERT HELLO", client);
+                return;
             }
-            func(client, failure, success);
+            func(client, data, failure, success);
         });
 };
 
-var testFunction = function (client, errorCallback, successCallback) {
+var testFunction = function (client, data, errorCallback, successCallback) {
     client
         .mirror.timeline.insert(
         {
@@ -134,11 +139,11 @@ var testFunction = function (client, errorCallback, successCallback) {
 
 // send a simple 'hello world' timeline card with a delete option
 var coverId = "";
-var insertHello = function (client, errorCallback, successCallback) {
+var insertHello = function (client, data, errorCallback, successCallback) {
     client
         .mirror.timeline.insert(
         {
-            "html": "<article class=\"photo\">\n  <img src=\"http://www.androidnova.org/wp-content/uploads/2013/07/lg1.jpg\" width=\"100%\" height=\"100%\">\n  <div class=\"overlay-gradient-tall-dark\"/>\n  <section>\n    <p class=\"text-auto-size\">Welcome to the LG Glass Experience</p>\n  </section>\n</article>\n",
+            "html": "<article>\n  <figure>\n    <img src=\"http://www.iceposter.com/thumbs/MOV_933115c6_b.jpg\">\n  </figure>\n  <section>\n    <h1 class=\"text-large\">Stand By Me</h1>\n    <p class=\"text-x-small\">\n      <img class=\"icon-small\" src=\"https://mirror-api-playground.appspot.com/links/rated_r.png\">\n      120 min / Drama\n    </p>\n    <hr>\n    <p class=\"text-normal\">\n      1:15 2:10 4:15<br>\n      MY LG Smart TV\n    </p>\n  </section>\n</article>\n",
             "bundleId": "lgGlass",
             "isBundleCover": true,
             "notification": {
@@ -156,7 +161,7 @@ var insertHello = function (client, errorCallback, successCallback) {
         });
 };
 
-var insertActorCard = function (client, pubnubInfo, errorCallback, successCallback) {
+var insertActorCard = function (client, data, pubnubInfo, errorCallback, successCallback) {
     client
         .mirror.timeline.insert(
         {
@@ -191,7 +196,7 @@ var insertActorCard = function (client, pubnubInfo, errorCallback, successCallba
         });
 };
 
-var updateActorCard = function (client, pubnubInfo, errorCallback, successCallback) {
+var updateCards = function (client, data, errorCallback, successCallback) {
     client
         .mirror.timeline.update(
         {
@@ -413,9 +418,7 @@ app.get('/send', function(req, res){
     res.end();
 });
 app.get('/sendupdate', function(req, res){
-    //sendUpdate();
     console.log("/sendupdate,", res);
-    //res.write('Glass Mirror API with Node');
     res.redirect('/signedin');
     res.end();
 });
